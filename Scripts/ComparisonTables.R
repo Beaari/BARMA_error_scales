@@ -29,7 +29,7 @@ source("Scripts/Functions/SimulationBarma.R")    # Function to simulate BARMA da
 source("Scripts/Functions/BARMA.R")              # BARMA function
 source("Scripts/Functions/AuxiliaryFunctions.R") # Auxiliary functions to BARMA model
 
-get_simulated_tab <- function(settings_par, scale, seed, h){
+get_simulated_tab <- function(settings_par, seed, h){
   
   # Settings of data generation           --------------------------------------
   
@@ -102,7 +102,8 @@ get_simulated_tab <- function(settings_par, scale, seed, h){
   
   # Output                                --------------------------------------
   
-  return(list(y = y, 
+  return(list(y_orig = y_orig,
+              y_pred = y_pred,
               fit_BARMA_pred = fit_BARMA_pred, 
               fit_BARMA_orig = fit_BARMA_orig,
               RMSE_pred = RMSE_pred,
@@ -119,7 +120,7 @@ settings_par <- list(240, 0, 0.4, -0.7, 20, "logit", 1, 1)
 
 objs <- get_simulated_tab(settings_par, seed = 16, h = 6)
 
-y <- objs$y
+y <- objs$y_orig
 
 # Data behavior through time-series, ACF, and PACF plots
 y %>% 
