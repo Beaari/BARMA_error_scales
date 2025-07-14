@@ -46,7 +46,8 @@
 simuBarma <- function(n,
                       varphi = NA, theta = NA,
                       alpha = 0.0, phi = 20, 
-                      freq = 12, link = "logit") {
+                      freq = 12, link = "logit",
+                      scale = "original") {
   
   ar <- NA
   ma <- NA
@@ -144,8 +145,9 @@ simuBarma <- function(n,
       mu[i] <- linkinv(eta[i])
       y[i] <- rbeta(1, mu[i] * phi, (1 - mu[i]) * phi)
       ynew[i] <- linkfun(y[i])
-      error[i] <- ynew[i] - eta[i]
-      
+      error[i] <- ifelse(tolower(scale) == "original",
+                         linkinv(ynew[i]) - mu[i],
+                         ynew[i] - eta[i])
     }
     
     return(ts(y[(m + 1):(n + m)], frequency = freq))

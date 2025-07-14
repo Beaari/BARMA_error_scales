@@ -29,7 +29,7 @@ source("Scripts/Functions/SimulationBarma.R")    # Function to simulate BARMA da
 source("Scripts/Functions/BARMA.R")              # BARMA function
 source("Scripts/Functions/AuxiliaryFunctions.R") # Auxiliary functions to BARMA model
 
-get_simulated_tab <- function(settings_par,seed, h){
+get_simulated_tab <- function(settings_par, scale, seed, h){
   
   # Settings of data generation           --------------------------------------
   
@@ -46,47 +46,58 @@ get_simulated_tab <- function(settings_par,seed, h){
   set.seed(seed)
   
   # Generate data using the specified BARMA parameters
-  y <- simuBarma(n = sample_size, 
+  y_orig <- simuBarma(n = sample_size, 
                  varphi = varphi_true, 
                  theta = theta_true, 
                  alpha = alpha_true, 
                  phi = phi_true, 
-                 link = link)
+                 link = link,
+                 scale = "original")
   
+  y_pred <- simuBarma(n = sample_size, 
+                      varphi = varphi_true, 
+                      theta = theta_true, 
+                      alpha = alpha_true, 
+                      phi = phi_true, 
+                      link = link,
+                      scale = "predictor")
   
   # Fit BARMA Model                       --------------------------------------
   
   ar_vec <- settings_par[[7]]        # Define autoregressive order
   ma_vec <- settings_par[[8]]        # Define moving average order
   
-  y_window <- window(y, end = time(y)[length(y) - h])
-  
-  # Fit the BARMA with error on predictor with chosen link
-  fit_BARMA_pred <- barma(y = y_window, 
-                              ar = ar_vec,
-                              ma = ma_vec,
-                              link = link,
-                              scale = "predictor",
-                              h = h,
-                              X = NA, 
-                              X_hat = NA)
+  y_window_orig <- window(y_orig, end = time(y_orig)[length(y_orig) - h])
+  y_window_pred <- window(y_pred, end = time(y_pred)[length(y_pred) - h])
   
   # Fit the BARMA with error on original scale with chosen link
-  fit_BARMA_orig <- barma(y = y_window, 
-                              ar = ar_vec,
-                              ma = ma_vec,
-                              link = link,
-                              scale = "original",
-                              h = h,
-                              X = NA, 
-                              X_hat = NA)
+  fit_BARMA_orig <- barma(y = y_window_orig, 
+                          ar = ar_vec,
+                          ma = ma_vec,
+                          link = link,
+                          scale = "original",
+                          h = h,
+                          X = NA, 
+                          X_hat = NA)
+  
+  # Fit the BARMA with error on predictor with chosen link
+  fit_BARMA_pred <- barma(y = y_window_pred, 
+                          ar = ar_vec,
+                          ma = ma_vec,
+                          link = link,
+                          scale = "predictor",
+                          h = h,
+                          X = NA, 
+                          X_hat = NA)
+  
   
   # Metric                                --------------------------------------
   
-  y_obs <- window(y, start = time(y)[length(y) - h + 1])
+  y_obs_orig <- window(y_orig, start = time(y_orig)[length(y_orig) - h + 1])
+  y_obs_pred <- window(y_pred, start = time(y_pred)[length(y_pred) - h + 1])
   
-  RMSE_pred <- rmse(y_obs, fit_BARMA_pred$forecast) # Predictor scale
-  RMSE_orig <- rmse(y_obs, fit_BARMA_orig$forecast) # Original scale
+  RMSE_orig <- rmse(y_obs_orig, fit_BARMA_orig$forecast) # Original scale
+  RMSE_pred <- rmse(y_obs_pred, fit_BARMA_pred$forecast) # Predictor scale
   
   
   # Output                                --------------------------------------
